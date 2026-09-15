@@ -7,15 +7,16 @@ F.CSA313 — Программ хангамжийн чанарын баталга
 `k6 version` командын гаралт ([results/k6-version.txt](results/k6-version.txt)):
 
 ```
-k6 v1.2.3 (commit/e4a5a88f7c, go1.24.6, linux/amd64)
+k6 v2.2.0 (commit/devel, go1.26.5, darwin/arm64)
 ```
 
 | Зүйл | Утга |
 |---|---|
-| Үйлдлийн систем | Ubuntu 24.04.4 LTS (x86_64) |
-| CPU / RAM | 2 vCPU / 7 GB |
-| Бай (target) сервер | Өөрийн бичсэн локал Node.js сервер — [`server/server.js`](server/server.js), `http://localhost:3000` (Node v22) |
-| Load тест хэрэгсэл | Grafana k6 v1.2.3 (AGPL v3) |
+| Машин / ҮС | MacBook Air (Apple Silicon, arm64), macOS — `brew install k6` |
+| Бай (target) сервер | Өөрийн бичсэн локал Node.js сервер — [`server/server.js`](server/server.js), `http://localhost:3000` |
+| Load тест хэрэгсэл | Grafana k6 v2.2.0 (AGPL v3) |
+
+k6 болон сервер хоёулаа нэг машин дээр ажилласан.
 
 ### Ёс зүй — тестийн бай
 
@@ -25,7 +26,7 @@ k6 v1.2.3 (commit/e4a5a88f7c, go1.24.6, linux/amd64)
 
 | Endpoint | Тайлбар |
 |---|---|
-| `GET /` | Бүтээгдэхүүний жагсаалт бүхий JSON "хуудас" бэлтгэнэ — хуудас render хийхтэй төстэй **CPU ажил (~12 мс)**. Node.js нэг thread-тэй тул зэрэгцээ хүсэлт олшрох тусам хүсэлтүүд дараалалд зогсоно. |
+| `GET /` | Бүтээгдэхүүний жагсаалт бүхий JSON "хуудас" бэлтгэнэ — хуудас render хийхтэй төстэй CPU ажил (sha256 hash тооцоолол). Node.js нэг thread-тэй тул зэрэгцээ хүсэлт олшрох тусам хүсэлтүүд дараалалд зогсоно. |
 | `GET /slow` | Хариуг `setTimeout`-оор **100 мс удаашруулдаг** endpoint (Алхам 5). CPU ашиглахгүй. |
 | `GET /health` | Хамгийн хөнгөн endpoint |
 
@@ -33,16 +34,17 @@ k6 v1.2.3 (commit/e4a5a88f7c, go1.24.6, linux/amd64)
 
 ```bash
 node server/server.js                  # 1-р терминал: сервер асаах
-mkdir -p results                       # 2-р терминал:
-k6 run script.js 2>&1 | tee results/step2-baseline-05vu-30s.txt          # Алхам 2
-k6 run --vus 5   --duration 1m script.js > results/run-05vu.txt           # Алхам 3
-k6 run --vus 30  --duration 1m script.js > results/run-30vu.txt
-k6 run --vus 100 --duration 1m script.js > results/run-100vu.txt
-k6 run script-stages.js 2>&1 | tee results/run-stages.txt
+                                       # 2-р терминал:
+k6 version | tee results/k6-version.txt
+k6 run script.js | tee results/step2-baseline-05vu-30s.txt                # Алхам 2
+k6 run --vus 5   --duration 1m script.js | tee results/run-05vu.txt        # Алхам 3
+k6 run --vus 30  --duration 1m script.js | tee results/run-30vu.txt
+k6 run --vus 100 --duration 1m script.js | tee results/run-100vu.txt
+k6 run script-stages.js | tee results/run-stages.txt
 k6 run script-thresholds.js      > results/thresholds-pass.txt; echo "exit code: $?" | tee -a results/thresholds-pass.txt   # Алхам 4
 k6 run script-thresholds-fail.js > results/thresholds-fail.txt; echo "exit code: $?" | tee -a results/thresholds-fail.txt
-k6 run --vus 30  --duration 1m script-slow.js > results/slow-30vu.txt     # Алхам 5
-k6 run --vus 100 --duration 1m script-slow.js > results/slow-100vu.txt
+k6 run --vus 30  --duration 1m script-slow.js | tee results/slow-30vu.txt  # Алхам 5
+k6 run --vus 100 --duration 1m script-slow.js | tee results/slow-100vu.txt
 ./extract-table.sh                     # хүснэгтийн тоог гаралтын файлаас шууд задлах
 ```
 
@@ -58,26 +60,26 @@ k6 run --vus 100 --duration 1m script-slow.js > results/slow-100vu.txt
 | [`server/server.js`](server/server.js) | Локал тест сервер |
 | [`extract-table.sh`](extract-table.sh) | `results/run-*vu.txt`-ээс хүснэгтийн тоог задалдаг скрипт |
 | [`results/`](results/) | k6-ийн **бүтэн текст гаралтууд** |
-| [`screenshots/`](screenshots/) | k6 summary гаралтын дэлгэцийн зургууд (xterm терминал дээр `results/` дахь гаралтын файлыг `tail`-аар харуулж авсан) |
+| [`screenshots/`](screenshots/) | k6 summary гаралтын дэлгэцийн зургууд (MacBook-ийн Terminal) |
 
 ## 3. Алхам 2 — Анхны тест ба BASELINE
 
 `script.js` (5 VU, 30s) → [results/step2-baseline-05vu-30s.txt](results/step2-baseline-05vu-30s.txt)
 
 ```
-http_req_duration..............: avg=13.89ms min=8.42ms med=12.46ms max=59.03ms p(90)=18.86ms p(95)=22.92ms
+http_req_duration..............: avg=14.8ms min=4.1ms med=14.48ms max=30.86ms p(90)=16.29ms p(95)=17.11ms
 http_req_failed................: 0.00%  0 out of 150
-http_reqs......................: 150    4.922668/s
+http_reqs......................: 150    4.92108/s
 ```
 
 | Хэмжүүр | Утга | Тайлбар |
 |---|---|---|
-| http_req_duration avg | 13.89 мс | дундаж latency |
-| http_req_duration p90 | 18.86 мс | хүсэлтийн 90% үүнээс хурдан |
-| http_req_duration p95 | **22.92 мс** | **BASELINE** |
+| http_req_duration avg | 14.8 мс | дундаж latency |
+| http_req_duration p90 | 16.29 мс | хүсэлтийн 90% үүнээс хурдан |
+| http_req_duration p95 | **17.11 мс** | **BASELINE** |
 | http_reqs (нийт) | 150 | |
-| http_reqs (секундэд) | 4.92 req/s | throughput |
-| http_req_failed | 0.00% (0 / 150) | error rate — POFOD-ийн аналог |
+| http_reqs (секундэд) | 4.92108/s | throughput |
+| http_req_failed | 0.00% (0 out of 150) | error rate — POFOD-ийн аналог |
 
 ![Алхам 2 baseline](screenshots/01-step2-baseline-05vu.png)
 
@@ -87,17 +89,17 @@ http_reqs......................: 150    4.922668/s
 
 | VU | p90 | p95 | Throughput (http_reqs) | Error rate (http_req_failed) | Гаралтын файл |
 |---|---|---|---|---|---|
-| 5 | 15.61ms | 17.91ms | 300 (4.929018/s) | 0.00% (0 out of 300) | [results/run-05vu.txt](results/run-05vu.txt) |
-| 30 | 22.14ms | 31.63ms | 1773 (29.159929/s) | 0.00% (0 out of 1773) | [results/run-30vu.txt](results/run-30vu.txt) |
-| 100 | 163.74ms | 192.68ms | 5468 (89.421658/s) | 0.00% (0 out of 5468) | [results/run-100vu.txt](results/run-100vu.txt) |
+| 5 | 16.63ms | 17.29ms | 300 (4.921562/s) | 0.00% (0 out of 300) | [results/run-05vu.txt](results/run-05vu.txt) |
+| 30 | 19.21ms | 21.31ms | 1779 (29.158477/s) | 0.00% (0 out of 1779) | [results/run-30vu.txt](results/run-30vu.txt) |
+| 100 | 21.21ms | 25.62ms | 5911 (96.878828/s) | 0.00% (0 out of 5911) | [results/run-100vu.txt](results/run-100vu.txt) |
 
 Нэмэлт тооцоо (дээрх тооноос):
 
 | VU | Нэг VU-д ногдох throughput | p95-ийн өсөлт (5 VU-тэй харьцуулахад) | Хамгийн удаан хүсэлт (max) |
 |---|---|---|---|
-| 5 | 4.929 / 5 = 0.986 req/s | ×1.0 | 76.92ms |
-| 30 | 29.160 / 30 = 0.972 req/s | ×1.8 | 316.88ms |
-| 100 | 89.422 / 100 = 0.894 req/s | ×10.8 | 1.76s |
+| 5 | 4.922 / 5 = 0.984 req/s | ×1.00 | 31.22ms |
+| 30 | 29.158 / 30 = 0.972 req/s | ×1.23 | 123.57ms |
+| 100 | 96.879 / 100 = 0.969 req/s | ×1.48 | 414.03ms |
 
 ![5 VU](screenshots/02-run-05vu.png)
 ![30 VU](screenshots/03-run-30vu.png)
@@ -105,21 +107,21 @@ http_reqs......................: 150    4.922668/s
 
 ### 4.2 "Нэгж хэрэглэгчийн туршлага" хаанаас муудсан бэ?
 
-* **5 → 30 VU:** ачаалал 6 дахин өсөхөд throughput бараг шугаман өссөн (4.93 → 29.16 req/s), p95 17.91 → 31.63 мс болж ердөө ~14 мс нэмэгдсэн. Хэрэглэгч ялгааг бараг мэдрэхгүй.
-* **30 → 100 VU:** ачаалал 3.3 дахин өсөхөд throughput зөвхөн 3.07 дахин өссөн (29.16 → 89.42 req/s, хүлээгдэж буй ~98 req/s-д хүрээгүй), харин p95 **6 дахин** (31.63 → 192.68 мс), max latency 1.76 с болсон.
-* **Муудах цэг — 30-аас 100 VU-ийн хооронд.** `/` хүсэлт бүр ~12 мс CPU ашигладаг тул нэг thread-тэй Node сервер онолын хувьд секундэд ойролцоогоор 80–90 хүсэлт л боловсруулна. 100 VU нь секундэд ~100 хүсэлт илгээх гэж оролдсон тул сервер **ханасан (saturation)**, хүсэлтүүд дараалалд хүлээж эхэлсэн — throughput нэмэгдсээр байхад нэг хэрэглэгчийн хүлээх хугацаа огцом өссөн. Энэ бол лекцийн "10 хэрэглэгчтэй үед 2 с, 100 хэрэглэгчтэй үед 4 с" гэсэн **throughput ба latency-ийн зөрчил**.
+* **5 → 30 VU:** ачаалал 6 дахин өсөхөд throughput бараг шугаман өссөн (4.92 → 29.16 req/s), p95 17.29 → 21.31 мс болж ердөө ~4 мс нэмэгдсэн. Харин хамгийн удаан хүсэлт (max) 31.22 → 123.57 мс болж 4 дахин өссөн.
+* **30 → 100 VU:** ачаалал 3.3 дахин өсөхөд throughput 3.32 дахин өссөн (29.16 → 96.88 req/s) — MacBook-ийн хурдан CPU-гийн ачаар сервер хараахан ханаагүй. Гэвч p95 21.31 → 25.62 мс, max 123.57 → **414.03 мс** болж, 5 VU-тэй харьцуулахад max latency **13 дахин** өссөн.
+* **Муудах цэг — 100 VU орчим.** Дундаж болон median хэрэглэгч ялгааг бараг мэдрэхгүй (med 14.82 → 15.45 мс) ч "сүүл" (tail latency) хэсэгт буюу хамгийн азгүй хэрэглэгчдийн хүлээлт огцом өссөн: 100 VU-д p95 (25.62 мс) нь SLO хязгаар (26 мс)-т бараг тулсан. Node.js нэг thread-тэй тул олон хүсэлт зэрэг ирэхэд зарим нь дараалалд зогсож, энэ нь эхлээд p95/max-д илэрдэг. Ачааллыг цааш нэмбэл throughput өсөхөө болиод latency огцом өсөх (saturation) нь лекцийн **throughput ба latency-ийн зөрчил**-ийн эхлэл юм.
 
 ### 4.3 Stages хувилбар
 
 `script-stages.js` (30s → 5, 1m → 30, 30s → 100, 30s → 0) → [results/run-stages.txt](results/run-stages.txt)
 
 ```
-http_req_duration..............: avg=19.25ms min=5.95ms med=12.79ms max=291.35ms p(90)=38.86ms p(95)=64.78ms
-http_req_failed................: 0.00%  0 out of 4503
-http_reqs......................: 4503   29.900891/s
+http_req_duration..............: avg=8.55ms min=3.21ms med=6.66ms max=32.4ms p(90)=15.38ms p(95)=16.31ms
+http_req_failed................: 0.00%  0 out of 4553
+http_reqs......................: 4553   30.185239/s
 ```
 
-Ажиглалт: ачаалал нэмэгдэж оргил (100 VU) руу ойртох үед latency өсөж, буултын үед хэвийн болсон. Гэхдээ нэгтгэсэн ганц summary нь бүх үеийг хольж өгдөг тул p95 = 64.78 мс гэж "дундажласан" дүр зураг харуулсан — оргил үеийн жинхэнэ p95 (100 VU-д 192.68 мс) нуугдсан. Иймээс хүснэгтийн тоог тусдаа ажиллуулалтаас авсан.
+Ажиглалт: ачаалал 5 → 30 → 100 VU хүртэл өсөж, дараа нь 0 хүртэл буусан. Нэгтгэсэн ганц summary нь халаалт, өсгөлт, оргил, буултын бүх үеийн хүсэлтийг хольж өгдөг тул p95 = 16.31 мс гэж харуулсан — энэ нь 100 VU-ийн тусдаа ажиллуулалтын p95 (25.62 мс)-аас бага. Өөрөөр хэлбэл оргил үеийн жинхэнэ дүр зураг нуугддаг тул хүснэгтийн тоог тусдаа ажиллуулалтаас авсан.
 
 ![Stages](screenshots/05-run-stages.png)
 
@@ -129,7 +131,7 @@ http_reqs......................: 4503   29.900891/s
 
 | SLO | Threshold | Үндэслэл |
 |---|---|---|
-| Latency | `http_req_duration: ['p(95)<45']` | Алхам 2-ын baseline p95 = **22.92 мс**. Тест 30 VU буюу baseline-аас 6 дахин их ачаалалтай тул latency baseline-ийн **2 дахин** (22.92 × 2 ≈ 45 мс) хүртэл өсөхийг зөвшөөрсөн; ×1.5 (≈34 мс) нь 30 VU-ийн хэмжилт (31.63 мс)-д хэт ойр байсан тул хэвийн хэлбэлзлээс болж худал FAIL гарах эрсдэлтэй. |
+| Latency | `http_req_duration: ['p(95)<26']` | Алхам 2-ын baseline p95 = **17.11 мс**. SLO-г **baseline × 1.5** (17.11 × 1.5 = 25.67 ≈ 26 мс) гэж тогтоосон: 30 VU-ийн ачаалалд latency baseline-аас 50% хүртэл өсөхийг зөвшөөрнө, түүнээс илүү удаашрал хэрэглэгчид мэдрэгдэж эхэлнэ гэж үзсэн. |
 | Error rate | `http_req_failed: ['rate<0.01']` | Baseline-д алдаа 0% байсан; 1%-иас бага алдааг хүлээн зөвшөөрөх түвшин гэж тогтоосон. |
 
 Скрипт: [`script-thresholds.js`](script-thresholds.js) (`vus: 30, duration: "1m"`, stages-ийг устгасан).
@@ -139,7 +141,7 @@ http_reqs......................: 4503   29.900891/s
 ```
 █ THRESHOLDS
   http_req_duration
-  ✓ 'p(95)<45' p(95)=29.59ms
+  ✓ 'p(95)<26' p(95)=19.87ms
   http_req_failed
   ✓ 'rate<0.01' rate=0.00%
 exit code: 0
@@ -152,13 +154,13 @@ exit code: 0
 ```
 █ THRESHOLDS
   http_req_duration
-  ✗ 'p(95)<10' p(95)=29.77ms
+  ✗ 'p(95)<10' p(95)=20.43ms
   http_req_failed
   ✓ 'rate<0.01' rate=0.00%
 exit code: 99
 ```
 
-Terminal дээр мөн `level=error msg="thresholds on metrics 'http_req_duration' have been crossed"` гарсан. k6 threshold зөрчигдвөл **exit code 99** буцаадаг тул CI pipeline (GitHub Actions г.м.) энэ алхмыг автоматаар FAIL болгож, build-ийг зогсооно — quality gate яг ийм зарчмаар ажилладаг.
+Terminal дээр мөн `ERRO[0061] thresholds on metrics 'http_req_duration' have been crossed` гарсан. k6 threshold зөрчигдвөл **exit code 99** буцаадаг тул CI pipeline (GitHub Actions г.м.) энэ алхмыг автоматаар FAIL болгож, build-ийг зогсооно — quality gate яг ийм зарчмаар ажилладаг.
 
 ![Thresholds FAIL](screenshots/07-thresholds-FAIL.png)
 
@@ -166,29 +168,29 @@ Terminal дээр мөн `level=error msg="thresholds on metrics 'http_req_durat
 
 | Endpoint | VU | p90 | p95 | Throughput | Error rate | Файл |
 |---|---|---|---|---|---|---|
-| `/` (CPU ~12 мс) | 30 | 22.14ms | 31.63ms | 29.159929/s | 0.00% | [run-30vu.txt](results/run-30vu.txt) |
-| `/slow` (100 мс хүлээлт) | 30 | 102.4ms | 102.85ms | 27.212976/s | 0.00% | [slow-30vu.txt](results/slow-30vu.txt) |
-| `/` (CPU ~12 мс) | 100 | 163.74ms | 192.68ms | 89.421658/s | 0.00% | [run-100vu.txt](results/run-100vu.txt) |
-| `/slow` (100 мс хүлээлт) | 100 | 103.18ms | 104.06ms | 90.645395/s | 0.00% | [slow-100vu.txt](results/slow-100vu.txt) |
+| `/` (CPU ажил) | 30 | 19.21ms | 21.31ms | 29.158477/s | 0.00% | [run-30vu.txt](results/run-30vu.txt) |
+| `/slow` (100 мс хүлээлт) | 30 | 104.18ms | 104.35ms | 27.16162/s | 0.00% | [slow-30vu.txt](results/slow-30vu.txt) |
+| `/` (CPU ажил) | 100 | 21.21ms | 25.62ms | 96.878828/s | 0.00% | [run-100vu.txt](results/run-100vu.txt) |
+| `/slow` (100 мс хүлээлт) | 100 | 105.82ms | 106.14ms | 90.512321/s | 0.00% | [slow-100vu.txt](results/slow-100vu.txt) |
 
-Ажиглалт: `/slow` endpoint 100 мс-ээр удаан ч latency нь ачааллаас бараг хамаарахгүй (30 VU-д p95 102.85 мс, 100 VU-д 104.06 мс), учир нь `setTimeout` нь CPU-г блоклохгүй, Node-ийн event loop хүлээж буй олон хүсэлтийг зэрэг барьж чадна. Харин `/` endpoint 30 VU-д `/slow`-оос 3 дахин хурдан байсан ч 100 VU-д CPU ханаж, p95 нь `/slow`-оос ч удаан (192.68 мс) болсон. Эндээс харахад гүйцэтгэлийг зөвхөн нэг хүсэлтийн хурдаар биш, **ачаалал дор** хэмжих ёстой.
+Ажиглалт: `/slow` endpoint нь 100 мс удаашралаас болж `/`-оос ~5 дахин удаан ч latency нь ачааллаас бараг хамаарахгүй (30 VU-д p95 104.35 мс, 100 VU-д 106.14 мс, max 110.22 мс). Учир нь `setTimeout` CPU-г блоклохгүй, Node-ийн event loop хүлээж буй олон хүсэлтийг зэрэг барьж чадна. Харин CPU ашигладаг `/` endpoint-д max latency 123.57 → 414.03 мс болж өссөн. Удаашралын шалтгаан (I/O хүлээлт эсвэл CPU ажил) нь ачаалал дор систем хэрхэн зан төлөвлөхийг тодорхойлдог. Мөн `/slow`-ийн throughput (90.51 req/s) нь `/` (96.88 req/s)-оос бага, учир нь VU бүрийн нэг давталт илүү удаан (1.1 с) үргэлжилсэн.
 
 ![slow 30 VU](screenshots/08-slow-30vu.png)
 ![slow 100 VU](screenshots/09-slow-100vu.png)
 
 ## 7. Дүгнэлт
 
-1. Ачааллыг 5 → 30 → 100 VU болгон өсгөхөд throughput 4.93 → 29.16 → 89.42 req/s болж өссөн боловч 100 VU-д шугаман өсөлт зогсож, нэг VU-д ногдох throughput 0.986-аас 0.894 req/s болж буурсан.
-2. Үүний зэрэгцээ p95 latency 17.91 → 31.63 → 192.68 мс болж, 30-аас 100 VU руу шилжихэд 6 дахин огцом өссөн тул "нэгж хэрэглэгчийн туршлага" 30–100 VU-ийн хооронд муудаж эхэлсэн.
-3. Энэ нь лекцийн **throughput ба latency-ийн зөрчил**-ийг баталсан: систем нийтдээ илүү олон хүсэлт боловсруулж байхад хэрэглэгч бүр илүү удаан хүлээсэн.
-4. Шалтгаан нь нэг thread-тэй серверийн CPU ханасан (saturation) явдал бөгөөд ханалтын цэгт хүрмэгц хүсэлтүүд дараалалд зогсож latency шугаман бусаар өсдөг болохыг харлаа.
-5. 100 VU-д дундаж latency 106.11 мс байхад max нь 1.76 с байсан нь зөвхөн дунджийг харах нь хангалтгүй, **p95/p99 зэрэг percentile** хэмжүүр чухал гэсэн лекцийн ойлголтыг баталсан.
-6. Бүх түвшинд http_req_failed 0.00% байсан тул error rate (POFOD-ийн аналог) болон availability хангагдсан ч гүйцэтгэл муудсан — "алдаагүй" гэдэг нь "хангалттай хурдан" гэсэн үг биш юм.
-7. Stages-тэй нэг ажиллуулалт нэгтгэсэн summary-д p95-ийг 64.78 мс гэж харуулж оргил үеийн жинхэнэ утгыг нуусан тул түвшин бүрийг тусад нь хэмжих шаардлагатай болохыг ойлгосон.
-8. Миний SLO нь baseline p95 (22.92 мс)-ийн 2 дахин буюу 30 VU-д **p95 < 45 мс** ба **error rate < 1%** байсан бөгөөд хэмжилтээр p95 = 29.59 мс, алдаа 0.00% гарч **SLO хангагдсан (PASS, exit code 0)**.
-9. Харин threshold-ыг санаатай `p(95)<10` болгоход k6 FAIL болж exit code 99 буцаасан нь SLO-г кодоор тодорхойлж CI дээр quality gate болгож болдгийг харуулсан.
-10. Хэрэв ижил SLO-г 100 VU-д хэрэглэвэл p95 = 192.68 мс тул зөрчигдөх байсан — өөрөөр хэлбэл энэ сервер одоогийн байдлаар ~30 зэрэгцээ хэрэглэгчийн SLO-г л баталгаатай хангана.
+1. Ачааллыг 5 → 30 → 100 VU болгон өсгөхөд throughput 4.92 → 29.16 → 96.88 req/s болж бараг шугаман өссөн бөгөөд нэг VU-д ногдох throughput 0.984-өөс 0.969 req/s болж бага зэрэг буурсан.
+2. Үүний зэрэгцээ p95 latency 17.29 → 21.31 → 25.62 мс болж 5 VU-тэй харьцуулахад 48%-иар өссөн, харин хамгийн удаан хүсэлт (max) 31.22 мс-ээс 414.03 мс болж 13 дахин өссөн.
+3. Эндээс лекцийн **percentile (p95/p99) хэмжүүрийн ач холбогдол** батлагдсан: median (14.82 → 15.45 мс) бараг өөрчлөгдөөгүй ч "сүүл" хэсгийн хэрэглэгчдийн туршлага мэдэгдэхүйц муудсан.
+4. Нэгж хэрэглэгчийн туршлага 100 VU орчимд муудаж эхэлсэн — p95 (25.62 мс) нь миний SLO хязгаар (26 мс)-т бараг тулсан.
+5. Систем нийтдээ илүү олон хүсэлт боловсруулж байхад хэрэглэгч бүрийн хүлээх хугацаа нэмэгдсэн нь лекцийн **throughput ба latency-ийн зөрчил**-ийг харуулсан; MacBook-ийн CPU хурдан тул 100 VU-д бүрэн ханалтад (saturation) хүрээгүй.
+6. Бүх түвшинд http_req_failed 0.00% байсан тул error rate (POFOD-ийн аналог) болон availability хангагдсан ч latency-ийн сүүл хэсэг өссөн — "алдаагүй" гэдэг нь "хангалттай хурдан" гэсэн үг биш юм.
+7. Stages-тэй нэг ажиллуулалт нэгтгэсэн summary-д p95-ийг 16.31 мс гэж харуулж, 100 VU-ийн оргил үеийн утга (25.62 мс)-ыг нуусан тул түвшин бүрийг тусад нь хэмжих шаардлагатай болохыг ойлгосон.
+8. Миний SLO нь baseline p95 (17.11 мс) × 1.5 буюу 30 VU-д **p95 < 26 мс** ба **error rate < 1%** байсан бөгөөд хэмжилтээр p95 = 19.87 мс, алдаа 0.00% гарч **SLO хангагдсан (PASS, exit code 0)**.
+9. Threshold-ыг санаатай `p(95)<10` болгоход k6 FAIL болж exit code 99 буцаасан нь SLO-г кодоор тодорхойлж CI дээр quality gate болгож болдгийг харуулсан.
+10. Алхам 5-д I/O хүлээлттэй `/slow` endpoint ачааллаас үл хамааран тогтвортой (~104–106 мс) байсан бол CPU ашигладаг `/` endpoint-ийн tail latency өссөн нь удаашралын шалтгаанаас гүйцэтгэл хамаардгийг харуулсан.
 
 ## 8. Commit түүх
 
-Ажлын явцад алхам бүрийг дуусгах бүрт commit хийсэн (`git log --oneline`-оор харна).
+Ажлын явцад алхам бүрийг дуусгах бүрт commit хийсэн (`git log --oneline`-оор харна). Эхний хэмжилтүүдийг өөр Linux орчинд хийсэн бөгөөд дараа нь бүх хэмжилтийг өөрийн MacBook дээр дахин хийж, тоо баримт болон дэлгэцийн зургуудыг шинэчилсэн.

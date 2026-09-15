@@ -5,6 +5,7 @@
   /          \   |   (  |  (‾)  |
  / __________ \  |_|\_\  \_____/ 
 
+
      execution: local
         script: script-slow.js
         output: -
@@ -73,7 +74,7 @@ default   [  32% ] 100 VUs  0m19.0s/1m0s
 running (0m20.0s), 100/100 VUs, 1800 complete and 0 interrupted iterations
 default   [  33% ] 100 VUs  0m20.0s/1m0s
 
-running (0m21.0s), 100/100 VUs, 1893 complete and 0 interrupted iterations
+running (0m21.0s), 100/100 VUs, 1843 complete and 0 interrupted iterations
 default   [  35% ] 100 VUs  0m21.0s/1m0s
 
 running (0m22.0s), 100/100 VUs, 1900 complete and 0 interrupted iterations
@@ -169,7 +170,7 @@ default   [  85% ] 100 VUs  0m51.0s/1m0s
 running (0m52.0s), 100/100 VUs, 4700 complete and 0 interrupted iterations
 default   [  87% ] 100 VUs  0m52.0s/1m0s
 
-running (0m53.0s), 100/100 VUs, 4800 complete and 0 interrupted iterations
+running (0m53.0s), 100/100 VUs, 4700 complete and 0 interrupted iterations
 default   [  88% ] 100 VUs  0m53.0s/1m0s
 
 running (0m54.0s), 100/100 VUs, 4800 complete and 0 interrupted iterations
@@ -196,21 +197,21 @@ default   [ 100% ] 100 VUs  1m00.0s/1m0s
 
   █ TOTAL RESULTS 
 
-    checks_total.......: 5500    90.645395/s
+    checks_total.......: 5500    90.512321/s
     checks_succeeded...: 100.00% 5500 out of 5500
     checks_failed......: 0.00%   0 out of 5500
 
     ✓ status 200 байна
 
     HTTP
-    http_req_duration..............: avg=101.8ms min=99.43ms med=101.38ms max=118.23ms p(90)=103.18ms p(95)=104.06ms
-      { expected_response:true }...: avg=101.8ms min=99.43ms med=101.38ms max=118.23ms p(90)=103.18ms p(95)=104.06ms
+    http_req_duration..............: avg=104.05ms min=100.61ms med=103.97ms max=110.22ms p(90)=105.82ms p(95)=106.14ms
+      { expected_response:true }...: avg=104.05ms min=100.61ms med=103.97ms max=110.22ms p(90)=105.82ms p(95)=106.14ms
     http_req_failed................: 0.00%  0 out of 5500
-    http_reqs......................: 5500   90.645395/s
+    http_reqs......................: 5500   90.512321/s
 
     EXECUTION
-    iteration_duration.............: avg=1.1s    min=1.09s   med=1.1s     max=1.12s    p(90)=1.1s     p(95)=1.1s    
-    iterations.....................: 5500   90.645395/s
+    iteration_duration.............: avg=1.1s     min=1.1s     med=1.1s     max=1.11s    p(90)=1.1s     p(95)=1.1s    
+    iterations.....................: 5500   90.512321/s
     vus............................: 100    min=100       max=100
     vus_max........................: 100    min=100       max=100
 
@@ -221,5 +222,5 @@ default   [ 100% ] 100 VUs  1m00.0s/1m0s
 
 
 
-running (1m00.7s), 000/100 VUs, 5500 complete and 0 interrupted iterations
+running (1m00.8s), 000/100 VUs, 5500 complete and 0 interrupted iterations
 default ✓ [ 100% ] 100 VUs  1m0s
