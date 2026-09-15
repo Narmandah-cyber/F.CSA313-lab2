@@ -58,7 +58,7 @@ k6 run --vus 100 --duration 1m script-slow.js > results/slow-100vu.txt
 | [`server/server.js`](server/server.js) | Локал тест сервер |
 | [`extract-table.sh`](extract-table.sh) | `results/run-*vu.txt`-ээс хүснэгтийн тоог задалдаг скрипт |
 | [`results/`](results/) | k6-ийн **бүтэн текст гаралтууд** |
-| [`screenshots/`](screenshots/) | k6 summary гаралтын дэлгэцийн зургууд |
+| [`screenshots/`](screenshots/) | k6 summary гаралтын дэлгэцийн зургууд (xterm терминал дээр `results/` дахь гаралтын файлыг `tail`-аар харуулж авсан) |
 
 ## 3. Алхам 2 — Анхны тест ба BASELINE
 
