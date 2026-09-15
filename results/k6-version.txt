@@ -1,0 +1,1 @@
+k6 v1.2.3 (commit/e4a5a88f7c, go1.24.6, linux/amd64)
