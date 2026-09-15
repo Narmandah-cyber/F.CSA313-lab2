@@ -1,5 +1,5 @@
 // Алхам 4: Threshold-ыг САНААТАЙГААР хатуу болгож FAIL гаргах хувилбар
-// p95 < 10 мс нь baseline p95 (22.92 мс)-аас ч бага тул биелэх боломжгүй → k6 exit code 99 буцаана.
+// p95 < 10 мс нь baseline p95 (17.11 мс)-аас ч бага тул биелэх боломжгүй → k6 exit code 99 буцаана.
 // CI pipeline дээр quality gate яг ийм зарчмаар build-ийг зогсооно.
 import http from 'k6/http';
 import { sleep, check } from 'k6';
